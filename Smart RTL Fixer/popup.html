@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="header">
+    ✨ Smart RTL Fixer
+  </div>
+  <div class="container">
+    
+    <div class="card">
+      <div class="status-row">
+        <span style="font-weight: bold;">راست‌چین روی این تب:</span>
+        <button id="btn-manual-toggle" class="toggle-btn off">غیرفعال</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-size: 13px; font-weight: bold; margin-bottom: 5px;">⚡ اعمال خودکار روی سایت:</div>
+      <span id="current-domain" class="domain-text">...</span>
+      <hr style="border: 0; border-top: 1px solid var(--border); margin: 12px 0;">
+      <div class="status-row">
+        <span>همیشه راست‌چین شود:</span>
+        <button id="btn-auto-toggle" class="toggle-btn off">خاموش</button>
+      </div>
+    </div>
+
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

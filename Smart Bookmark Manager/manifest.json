@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Smart Bookmark Manager",
+  "version": "2.0",
+  "description": "مدیریت حرفه‌ای بوک‌مارک‌ها با همگام‌سازی ابری گوگل و ویرایش دستی",
+  "permissions": [
+    "bookmarks",
+    "activeTab",
+    "tabs"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Smart Bookmark Manager"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

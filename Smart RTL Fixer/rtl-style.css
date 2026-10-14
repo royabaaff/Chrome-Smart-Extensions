@@ -1,0 +1,64 @@
+/* ۱. اعمال فونت با محافظت کامل از آیکون‌های گوگل، جمنای و هرمس */
+*:not(i):not(svg):not(code):not(pre):not(kbd):not(.fa):not(.material-icons):not(.material-symbols-outlined):not(.google-symbols):not([class*="icon"]):not([class*="symbol"]) {
+    font-family: 'Vazirmatn', 'Yekan Bakh', Tahoma, sans-serif !important;
+}
+
+/* ۲. راست‌چین کردن و افزایش سایز فونت فقط برای محتوای اصلی */
+p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, table, .prose, .markdown-body, .message-content {
+    direction: rtl !important;
+    text-align: right !important;
+    font-size: 16px !important;
+    line-height: 1.9 !important;
+}
+
+/* ۳. محافظت از رابط کاربری */
+button, button *, [role="button"], [role="button"] *, [type="button"], [type="submit"], .btn {
+    font-size: 14px !important; 
+    line-height: normal !important;
+    direction: ltr !important; 
+    white-space: nowrap !important; 
+}
+
+pre > div, pre > div *, .code-header, .code-header * {
+    font-size: 13px !important;
+    direction: ltr !important;
+}
+
+/* ۴. جادوی کلمات انگلیسی */
+p *, h1 *, h2 *, h3 *, h4 *, h5 *, h6 *, li *, td * {
+    unicode-bidi: isolate !important;
+}
+
+/* ۵. استایل کدهای درون‌خطی */
+code, kbd, tt {
+    background-color: #282c34 !important;
+    color: #98c379 !important;
+    font-family: 'Ubuntu Mono', Consolas, monospace !important;
+    border-radius: 5px !important;
+    padding: 2px 6px !important;
+    direction: ltr !important;
+    unicode-bidi: isolate !important;
+    font-size: 14px !important;
+    border: 1px solid #3e4451 !important;
+    margin: 0 3px !important;
+    display: inline-block !important;
+}
+
+/* ۶. بلوک‌های کد بزرگ */
+pre {
+    background-color: #282c34 !important;
+    direction: ltr !important;
+    text-align: left !important;
+    padding: 16px !important;
+    border-radius: 8px !important;
+    border: 1px solid #3e4451 !important;
+}
+pre code {
+    background-color: transparent !important;
+    color: #abb2bf !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+    font-size: 15px !important; 
+}

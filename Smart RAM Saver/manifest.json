@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Smart RAM Saver",
+  "version": "1.0",
+  "description": "فریز و بهینه‌سازی خودکار تب‌های غیرفعال برای آزادسازی رم مرورگر",
+  "permissions": [
+    "tabs",
+    "storage",
+    "alarms"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Smart RAM Saver"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
