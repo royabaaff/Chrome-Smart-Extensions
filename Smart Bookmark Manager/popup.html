@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="header">
+    🔖 Smart Bookmark Manager
+  </div>
+
+  <div class="container">
+    
+    <!-- بخش ذخیره لینک -->
+    <div class="card">
+      <div class="input-group">
+        <label for="bookmark-title">عنوان سایت:</label>
+        <input type="text" id="bookmark-title" placeholder="عنوان را وارد کنید...">
+      </div>
+      
+      <div class="input-group">
+        <label for="bookmark-url">آدرس اینترنتی (URL):</label>
+        <input type="text" id="bookmark-url" placeholder="https://..." dir="ltr" style="text-align: left;">
+      </div>
+
+      <div class="input-group">
+        <label for="category-select">انتخاب دسته‌بندی (پوشه):</label>
+        <select id="category-select">
+          <option value="" disabled selected>در حال دریافت دسته‌ها...</option>
+        </select>
+      </div>
+
+      <div class="btn-row">
+        <button id="btn-bookmark" class="btn-primary">ذخیره در این دسته</button>
+      </div>
+    </div>
+
+    <!-- بخش ساخت دسته جدید -->
+    <div class="card" style="margin-bottom: 0;">
+      <div class="input-group">
+        <label for="new-category-name">ساخت دسته‌بندی جدید:</label>
+        <input type="text" id="new-category-name" placeholder="مثال: آموزش برنامه‌نویسی">
+      </div>
+      <div class="btn-row">
+        <button id="btn-create-category" class="btn-success">ایجاد پوشه</button>
+      </div>
+    </div>
+
+  </div>
+
+  <p id="status" class="status" role="status" aria-live="polite"></p>
+
+  <script src="popup.js"></script>
+</body>
+</html>

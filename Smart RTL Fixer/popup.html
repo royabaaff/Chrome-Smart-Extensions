@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="header">
+    ✨ Smart RTL Fixer
+  </div>
+  <div class="container">
+
+    <div class="card">
+      <div class="status-row">
+        <span style="font-weight: bold;">راست‌چین روی این تب:</span>
+        <button id="btn-manual-toggle" class="toggle-btn off">غیرفعال</button>
+      </div>
+
+      <hr style="border: 0; border-top: 1px solid var(--border); margin: 12px 0;">
+
+      <!-- بخش تغییر سایز فونت -->
+      <div class="status-row">
+        <span>سایز فونت:</span>
+        <div style="display: flex; align-items: center; gap: 8px; direction: ltr;">
+          <button id="btn-font-minus" class="font-btn" aria-label="کوچک کردن فونت">-</button>
+          <span id="font-size-display" style="font-weight: bold; width: 35px; text-align: center; font-family: sans-serif; font-size: 14px;">16px</span>
+          <button id="btn-font-plus" class="font-btn" aria-label="بزرگ کردن فونت">+</button>
+        </div>
+      </div>
+      <div class="status-row">
+        <label for="font-family-select">نوع فونت:</label>
+        <select id="font-family-select">
+          <option value="vazirmatn">وزیرمتن (در صورت نصب)</option>
+          <option value="tahoma">Tahoma</option>
+          <option value="system">فونت پیش‌فرض سیستم</option>
+        </select>
+      </div>
+      <button id="btn-reset-appearance" class="reset-btn">بازنشانی ظاهر</button>
+    </div>
+
+    <div class="card">
+      <div style="font-size: 13px; font-weight: bold; margin-bottom: 5px;">⚡ اعمال خودکار روی سایت:</div>
+      <span id="current-domain" class="domain-text">...</span>
+      <hr style="border: 0; border-top: 1px solid var(--border); margin: 12px 0;">
+      <div class="status-row">
+        <span>همیشه راست‌چین شود:</span>
+        <button id="btn-auto-toggle" class="toggle-btn off">خاموش</button>
+      </div>
+    </div>
+
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

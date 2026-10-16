@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="header">
+    🌍 Smart SOCKS Proxy
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <div class="input-group">
+        <label>آی‌پی سرور (IP)</label>
+        <input type="text" id="proxy-ip" placeholder="127.0.0.1" maxlength="253" autocomplete="off">
+      </div>
+      <div class="input-group">
+        <label>پورت (Port)</label>
+        <input type="number" id="proxy-port" placeholder="1080" min="1" max="65535" step="1">
+      </div>
+      <div class="input-group">
+        <label>دامنه‌های مستثنی شده (Bypass)</label>
+        <textarea id="bypass-list" placeholder="*.ir, &lt;local&gt;, localhost, 127.0.0.1"></textarea>
+      </div>
+      <div class="btn-row">
+        <button id="btn-connect" disabled>اتصال</button>
+        <button id="btn-disconnect" disabled>قطع اتصال</button>
+      </div>
+      <div id="feedback" class="feedback" role="status" aria-live="polite" hidden></div>
+    </div>
+
+    <div class="card">
+      <div class="status-row">
+        <span>وضعیت پروکسی:</span>
+        <span id="connection-status" class="status-badge off">غیرفعال</span>
+      </div>
+      <div class="status-row">
+        <span>آی‌پی فعلی:</span>
+        <span id="ip-address" class="ip-text">در حال بررسی...</span>
+      </div>
+      <div class="status-row">
+        <span>کشور IP:</span>
+        <span class="country-value">
+          <span id="country-code" class="country-code" hidden></span>
+          <span id="geo-location">در حال بررسی...</span>
+        </span>
+      </div>
+      <div class="btn-row">
+        <button id="btn-refresh">به‌روزرسانی IP</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

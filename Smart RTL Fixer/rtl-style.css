@@ -1,0 +1,68 @@
+/* ۱. راست‌چین، تعیین لاین-هایت و اعمال فونت فقط روی باکس‌های چت و پیام‌ها */
+html[data-rtl-active="true"] .message-content,
+html[data-rtl-active="true"] .prose,
+html[data-rtl-active="true"] .markdown-body,
+html[data-rtl-active="true"] [class*="message"],
+html[data-rtl-active="true"] [class*="chat-bubble"],
+html[data-rtl-active="true"] [class*="chat-message"] {
+    direction: rtl !important;
+    text-align: right !important;
+    font-family: var(--rtl-font-family, 'Vazirmatn', 'Yekan Bakh', Tahoma, sans-serif) !important;
+    line-height: 1.9 !important;
+    font-size: var(--rtl-custom-font-size, 16px) !important;
+}
+
+/* ۲. اعمال سایز فونت روی پاراگراف‌ها داخل همان باکس‌ها */
+html[data-rtl-active="true"] .message-content p,
+html[data-rtl-active="true"] .prose p,
+html[data-rtl-active="true"] .markdown-body p,
+html[data-rtl-active="true"] [class*="message"] p {
+    direction: rtl !important;
+    text-align: right !important;
+    font-family: var(--rtl-font-family, 'Vazirmatn', 'Yekan Bakh', Tahoma, sans-serif) !important;
+    font-size: var(--rtl-custom-font-size, 16px) !important;
+}
+
+/* ۳. محافظت از کدهای برنامه‌نویسی برای جلوگیری از به هم ریختن */
+html[data-rtl-active="true"] code,
+html[data-rtl-active="true"] kbd,
+html[data-rtl-active="true"] tt {
+    background-color: #282c34 !important;
+    color: #98c379 !important;
+    font-family: 'Ubuntu Mono', Consolas, monospace !important;
+    border-radius: 5px !important;
+    padding: 2px 6px !important;
+    direction: ltr !important;
+    unicode-bidi: isolate !important;
+    font-size: var(--rtl-code-font-size, 14px) !important;
+    border: 1px solid #3e4451 !important;
+    margin: 0 3px !important;
+    display: inline-block !important;
+}
+
+html[data-rtl-active="true"] pre {
+    background-color: #1e1e24 !important;
+    direction: ltr !important;
+    text-align: left !important;
+    padding: 16px !important;
+    border-radius: 8px !important;
+    border: 1px solid #3e4451 !important;
+}
+
+html[data-rtl-active="true"] pre code {
+    background-color: transparent !important;
+    color: #abb2bf !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+    font-family: 'Ubuntu Mono', Consolas, monospace !important;
+    line-height: 1.6 !important;
+}
+
+html[data-rtl-active="true"] [data-smart-rtl-code-tool] svg,
+html[data-rtl-active="true"] [data-smart-rtl-code-tool] i {
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 18px !important;
+}

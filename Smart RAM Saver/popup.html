@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="header">
+    🚀 Smart RAM Saver
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <div class="status-row">
+        <span style="font-weight: bold;">وضعیت سیستم فریز:</span>
+        <button id="btn-toggle" class="toggle-btn on">فعال</button>
+      </div>
+      <p id="tabs-status" class="status-text" role="status">در حال دریافت وضعیت تب‌ها…</p>
+      <hr style="border: 0; border-top: 1px solid var(--border); margin: 12px 0;">
+      
+      <div class="input-group">
+        <label>فریز بعد از (دقیقه):</label>
+        <input type="number" id="timeout-input" min="1" max="120" value="5">
+      </div>
+      
+      <div class="btn-row">
+        <button id="btn-save" class="btn-primary">ذخیره زمان</button>
+      </div>
+    </div>
+
+    <div class="card domain-card">
+      <div class="domain-heading">استثنای سایت فعلی</div>
+      <div id="current-domain" class="domain-name">در حال بررسی…</div>
+      <button id="btn-auto-domain" class="toggle-btn off" type="button" disabled>
+        این سایت: عادی
+      </button>
+      <p class="hint">تب‌های این سایت به‌صورت خودکار فریز نمی‌شوند.</p>
+    </div>
+
+    <div class="card" style="padding: 10px 15px;">
+      <button id="btn-discard-now" class="btn-danger" style="width: 100%;">🧹 فریز فوری تب‌های غیرفعالِ مجاز</button>
+      <p class="hint">تب فعال، تب‌های پین‌شده، در حال پخش صدا و سایت‌های مستثنا دست‌نخورده می‌مانند.</p>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

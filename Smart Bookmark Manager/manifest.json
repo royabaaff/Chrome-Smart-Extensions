@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Smart Bookmark Manager",
+  "version": "2.0",
+  "description": "مدیریت و دسته‌بندی بوک‌مارک‌های کروم",
+  "permissions": [
+    "bookmarks",
+    "tabs"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "OFF-16.png",
+      "48": "OFF-48.png",
+      "128": "OFF-128.png"
+    }
+  },
+  "icons": {
+    "16": "ON-16.png",
+    "48": "ON-48.png",
+    "128": "ON-128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
