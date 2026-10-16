@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Smart RAM Saver",
-  "version": "1.0",
-  "description": "فریز و بهینه‌سازی خودکار تب‌های غیرفعال برای آزادسازی رم مرورگر",
+  "version": "2.1",
+  "description": "بهینه‌سازی هوشمند مصرف رم و فریز کردن تب‌های غیرکاربردی",
   "permissions": [
     "tabs",
     "storage",
@@ -10,7 +10,17 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Smart RAM Saver"
+    "default_icon": {
+      "16": "ON-16.png",
+      "32": "ON-32.png",
+      "48": "ON-48.png",
+      "128": "ON-128.png"
+    }
+  },
+  "icons": {
+    "16": "ON-16.png",
+    "48": "ON-48.png",
+    "128": "ON-128.png"
   },
   "background": {
     "service_worker": "background.js"

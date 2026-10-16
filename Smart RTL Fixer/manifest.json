@@ -1,17 +1,28 @@
 {
   "manifest_version": 3,
   "name": "Smart RTL Fixer",
-  "version": "2.0",
-  "description": "راست‌چین و اصلاح فونت هوشمند صفحات با قابلیت اعمال خودکار روی دامنه‌های دلخواه",
+  "version": "2.2",
+  "description": "راست‌چین هوشمند صفحات، انتخاب فونت و اندازه متن با حفظ خوانایی کدها",
   "permissions": [
     "activeTab",
     "scripting",
     "storage",
     "tabs"
   ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Smart RTL Fixer"
+    "default_icon": {
+      "16": "ON-16.png",
+      "32": "ON-32.png"
+    }
+  },
+  "icons": {
+    "16": "ON-16.png",
+    "48": "ON-48.png",
+    "128": "ON-128.png"
   },
   "background": {
     "service_worker": "background.js"

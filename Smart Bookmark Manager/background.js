@@ -1,50 +1,78 @@
-// چک می‌کند که آیا آدرس فعلی قبلاً بوک‌مارک شده یا نه
-function updateBadgeStatus(tabId, url) {
-  if (!url || url.startsWith('chrome://') || url.startsWith('edge://')) {
-    chrome.action.setBadgeText({ text: '', tabId: tabId });
-    return;
-  }
+const latestIconUpdate = new Map();
 
-  chrome.bookmarks.search({ url: url }, (results) => {
-    if (results.length > 0) {
-      // اگر قبلاً ذخیره شده بود، تیک سبز رنگ نشان بده
-      chrome.action.setBadgeText({ text: "✔", tabId: tabId });
-      chrome.action.setBadgeBackgroundColor({ color: "#00d26a", tabId: tabId });
-    } else {
-      // اگر جدید بود، آیکون خالی بماند
-      chrome.action.setBadgeText({ text: "", tabId: tabId });
-    }
-  });
+async function updateIcon(tabId, url) {
+  const requestId = (latestIconUpdate.get(tabId) || 0) + 1;
+  latestIconUpdate.set(tabId, requestId);
+
+  try {
+    const isWebUrl = typeof url === 'string' && /^https?:\/\//i.test(url);
+    const matches = isWebUrl ? await chrome.bookmarks.search({ url }) : [];
+    if (latestIconUpdate.get(tabId) !== requestId) return;
+
+    await chrome.action.setIcon({
+      path: matches.length ? 'ON-128.png' : 'OFF-128.png',
+      tabId
+    });
+  } catch (error) {
+    console.error(`Unable to update bookmark icon for tab ${tabId}:`, error);
+  }
 }
 
-// وقتی تب‌ها جابجا می‌شوند
-chrome.tabs.onActivated.addListener((activeInfo) => {
-  chrome.tabs.get(activeInfo.tabId, (tab) => {
-    if (tab) updateBadgeStatus(tab.id, tab.url);
-  });
-});
+async function refreshAllTabs() {
+  try {
+    const tabs = await chrome.tabs.query({});
+    await Promise.all(tabs
+      .filter(tab => Number.isInteger(tab.id))
+      .map(tab => updateIcon(tab.id, tab.url)));
+  } catch (error) {
+    console.error('Unable to refresh bookmark icons:', error);
+  }
+}
 
-// وقتی یک سایت لود می‌شود
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete' || changeInfo.url) {
-    updateBadgeStatus(tabId, tab.url);
+chrome.tabs.onActivated.addListener(async ({ tabId }) => {
+  try {
+    const tab = await chrome.tabs.get(tabId);
+    await updateIcon(tabId, tab.url);
+  } catch (error) {
+    console.error(`Unable to read activated tab ${tabId}:`, error);
   }
 });
 
-// آپدیت زنده آیکون به محض اینکه یک سایت ذخیره شود
-chrome.bookmarks.onCreated.addListener((id, bookmark) => {
-  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-    if (tabs[0] && tabs[0].url === bookmark.url) {
-      updateBadgeStatus(tabs[0].id, tabs[0].url);
-    }
-  });
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete' || changeInfo.url) {
+    void updateIcon(tabId, tab.url);
+  }
 });
 
-// وقتی افزونه نصب می‌شود پوشه اولیه را می‌سازد
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.bookmarks.search({ title: 'Smart Bookmarks' }, (results) => {
-    if (results.length === 0) {
-      chrome.bookmarks.create({ parentId: '1', title: 'Smart Bookmarks' });
+chrome.tabs.onRemoved.addListener(tabId => {
+  latestIconUpdate.delete(tabId);
+});
+
+chrome.bookmarks.onCreated.addListener(() => {
+  void refreshAllTabs();
+});
+
+chrome.bookmarks.onRemoved.addListener(() => {
+  void refreshAllTabs();
+});
+
+chrome.bookmarks.onChanged.addListener(() => {
+  void refreshAllTabs();
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  void refreshAllTabs();
+});
+
+chrome.runtime.onInstalled.addListener(async () => {
+  try {
+    const matches = await chrome.bookmarks.search({ title: 'Smart Bookmarks' });
+    if (!matches.some(node => node.title === 'Smart Bookmarks' && !node.url)) {
+      await chrome.bookmarks.create({ title: 'Smart Bookmarks' });
     }
-  });
+  } catch (error) {
+    console.error('Unable to create the Smart Bookmarks folder:', error);
+  }
+
+  await refreshAllTabs();
 });

@@ -1,95 +1,138 @@
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
   const inputTitle = document.getElementById('bookmark-title');
   const inputUrl = document.getElementById('bookmark-url');
   const categorySelect = document.getElementById('category-select');
   const btnBookmark = document.getElementById('btn-bookmark');
   const btnCreateCategory = document.getElementById('btn-create-category');
   const inputNewCategory = document.getElementById('new-category-name');
+  const status = document.getElementById('status');
 
   let rootFolderId = null;
 
-  // ۱. دریافت اطلاعات تب فعلی و قرار دادن در کادرها (قابل ویرایش)
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tabs.length > 0 && !tabs[0].url.startsWith("chrome://")) {
-    inputTitle.value = tabs[0].title || "";
-    inputUrl.value = tabs[0].url || "";
+  function showStatus(message, type = 'info') {
+    status.textContent = message;
+    status.className = `status status-${type}`;
   }
 
-  // ۲. پیدا کردن یا ساختن پوشه ریشه (Smart Bookmarks)
-  chrome.bookmarks.search({ title: 'Smart Bookmarks' }, (results) => {
-    if (results.length > 0) {
-      rootFolderId = results[0].id;
-      loadCategories();
-    } else {
-      chrome.bookmarks.create({ title: 'Smart Bookmarks' }, (newFolder) => {
-        rootFolderId = newFolder.id;
-        loadCategories();
-      });
+  function isBookmarkableUrl(value) {
+    try {
+      const url = new URL(value);
+      return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }
+
+  async function getRootFolder() {
+    const matches = await chrome.bookmarks.search({ title: 'Smart Bookmarks' });
+    const root = matches.find(node => node.title === 'Smart Bookmarks' && !node.url);
+    return root || chrome.bookmarks.create({ title: 'Smart Bookmarks' });
+  }
+
+  async function loadCategories() {
+    const children = await chrome.bookmarks.getChildren(rootFolderId);
+    const folders = children.filter(child => !child.url);
+    categorySelect.replaceChildren();
+
+    if (!folders.length) {
+      const option = document.createElement('option');
+      option.value = '';
+      option.disabled = true;
+      option.selected = true;
+      option.textContent = 'هیچ دسته‌ای وجود ندارد';
+      categorySelect.appendChild(option);
+      return;
+    }
+
+    for (const folder of folders) {
+      const option = document.createElement('option');
+      option.value = folder.id;
+      option.textContent = folder.title;
+      categorySelect.appendChild(option);
+    }
+  }
+
+  async function initialize() {
+    try {
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      const tab = tabs[0];
+      if (tab) {
+        inputTitle.value = tab.title || '';
+        inputUrl.value = isBookmarkableUrl(tab.url || '') ? tab.url : '';
+      }
+
+      const root = await getRootFolder();
+      rootFolderId = root.id;
+      await loadCategories();
+      if (tab && !isBookmarkableUrl(tab.url || '')) {
+        showStatus('این صفحه قابل ذخیره نیست؛ آدرس یک سایت با http یا https وارد کنید.', 'error');
+      }
+    } catch (error) {
+      showStatus(`بارگذاری بوک‌مارک‌ها ناموفق بود: ${error.message}`, 'error');
+      console.error('Unable to initialize Smart Bookmark Manager:', error);
+    }
+  }
+
+  btnCreateCategory.addEventListener('click', async () => {
+    const name = inputNewCategory.value.trim();
+    if (!name) {
+      showStatus('نام دسته‌بندی را وارد کنید.', 'error');
+      inputNewCategory.focus();
+      return;
+    }
+    if (!rootFolderId) {
+      showStatus('پوشهٔ اصلی آماده نیست؛ پنجره را دوباره باز کنید.', 'error');
+      return;
+    }
+
+    btnCreateCategory.disabled = true;
+    try {
+      const children = await chrome.bookmarks.getChildren(rootFolderId);
+      const existing = children.find(child => !child.url && child.title === name);
+      const folder = existing || await chrome.bookmarks.create({ parentId: rootFolderId, title: name });
+      await loadCategories();
+      categorySelect.value = folder.id;
+      inputNewCategory.value = '';
+      showStatus(existing ? 'این دسته‌بندی از قبل وجود داشت.' : 'دسته‌بندی ساخته شد.', 'success');
+    } catch (error) {
+      showStatus(`ساخت دسته‌بندی ناموفق بود: ${error.message}`, 'error');
+      console.error('Unable to create bookmark category:', error);
+    } finally {
+      btnCreateCategory.disabled = false;
     }
   });
 
-  // ۳. لود کردن زیرپوشه‌ها
-  function loadCategories() {
-    chrome.bookmarks.getChildren(rootFolderId, (children) => {
-      categorySelect.innerHTML = '';
-      const folders = children.filter(c => !c.url); 
-      
-      if (folders.length === 0) {
-        const opt = document.createElement('option');
-        opt.value = "";
-        opt.disabled = true;
-        opt.selected = true;
-        opt.innerText = "هیچ دسته‌ای وجود ندارد";
-        categorySelect.appendChild(opt);
-        return;
-      }
-
-      folders.forEach(folder => {
-        const opt = document.createElement('option');
-        opt.value = folder.id;
-        opt.innerText = folder.title;
-        categorySelect.appendChild(opt);
-      });
-    });
-  }
-
-  // ۴. ساخت دسته جدید
-  btnCreateCategory.addEventListener('click', () => {
-    const name = inputNewCategory.value.trim();
-    if (!name || !rootFolderId) return;
-
-    chrome.bookmarks.create({ parentId: rootFolderId, title: name }, () => {
-      inputNewCategory.value = '';
-      const originalText = btnCreateCategory.innerText;
-      btnCreateCategory.innerText = "پوشه ساخته شد!";
-      setTimeout(() => { btnCreateCategory.innerText = originalText; }, 1500);
-      loadCategories();
-    });
-  });
-
-  // ۵. ذخیره سایت با اطلاعات دستی وارد شده
-  btnBookmark.addEventListener('click', () => {
+  btnBookmark.addEventListener('click', async () => {
     const selectedFolderId = categorySelect.value;
     const finalTitle = inputTitle.value.trim();
     const finalUrl = inputUrl.value.trim();
 
-    if (!selectedFolderId || !finalUrl) {
-      alert("لطفاً یک دسته انتخاب کنید و آدرس را وارد نمایید.");
+    if (!selectedFolderId) {
+      showStatus('یک دسته‌بندی انتخاب کنید.', 'error');
+      categorySelect.focus();
+      return;
+    }
+    if (!isBookmarkableUrl(finalUrl)) {
+      showStatus('آدرس معتبر با http یا https وارد کنید.', 'error');
+      inputUrl.focus();
       return;
     }
 
-    chrome.bookmarks.create({
-      parentId: selectedFolderId,
-      title: finalTitle || "بدون عنوان",
-      url: finalUrl
-    }, () => {
-      const originalText = btnBookmark.innerText;
-      btnBookmark.innerText = "ذخیره شد!";
-      btnBookmark.style.backgroundColor = "var(--success)";
-      setTimeout(() => { 
-        btnBookmark.innerText = originalText; 
-        btnBookmark.style.backgroundColor = "var(--primary)";
-      }, 1500);
-    });
+    btnBookmark.disabled = true;
+    try {
+      await chrome.bookmarks.create({
+        parentId: selectedFolderId,
+        title: finalTitle || 'بدون عنوان',
+        url: finalUrl
+      });
+      showStatus('بوک‌مارک ذخیره شد.', 'success');
+    } catch (error) {
+      showStatus(`ذخیرهٔ بوک‌مارک ناموفق بود: ${error.message}`, 'error');
+      console.error('Unable to create bookmark:', error);
+    } finally {
+      btnBookmark.disabled = false;
+    }
   });
+
+  void initialize();
 });

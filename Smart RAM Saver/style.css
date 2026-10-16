@@ -119,3 +119,30 @@ button:hover { opacity: 0.9; }
   background-color: var(--border); 
   color: var(--text-muted); 
 }
+
+.domain-card { text-align: center; }
+
+.domain-heading {
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.domain-name {
+  direction: ltr;
+  overflow-wrap: anywhere;
+  color: var(--text-muted);
+  font-size: 12px;
+  margin: 8px 0;
+}
+
+.hint, .status-text {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 8px 0 0;
+}
+
+.status-text { min-height: 18px; }
+.status-text.error { color: var(--danger); }
+
+button:disabled { cursor: wait; opacity: 0.6; }

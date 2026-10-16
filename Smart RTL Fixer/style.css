@@ -58,6 +58,11 @@ body {
   border: none;
   cursor: pointer;
 }
+.toggle-btn:disabled,
+.font-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
 .toggle-btn.off { background-color: var(--border); color: var(--text-muted); }
 
 .domain-text {
@@ -69,3 +74,45 @@ body {
   display: block;
   margin-top: 5px;
 }
+
+.font-btn {
+  background-color: var(--border);
+  color: var(--text-main);
+  border: none;
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.font-btn:hover { background-color: var(--primary); color: white; }
+.font-btn:active { transform: scale(0.9); }
+
+#font-family-select {
+  max-width: 165px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-color);
+  color: var(--text-main);
+  font: inherit;
+}
+
+.reset-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  cursor: pointer;
+}
+.reset-btn:hover { border-color: var(--primary); color: var(--text-main); }
+.reset-btn:disabled,
+#font-family-select:disabled { cursor: not-allowed; opacity: 0.5; }
