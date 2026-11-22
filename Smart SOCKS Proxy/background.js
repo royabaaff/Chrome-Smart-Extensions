@@ -1,3 +1,21 @@
+// Smart SOCKS Proxy — background service worker.
+//
+// v2.4 changes:
+// - The bypass list is now a curated, up-to-date Iran-only list (60 entries).
+//   `*.ir` already covers every .ir domain, so the list holds the Iranian
+//   services on other TLDs (.com/.ai/.org/.net/.io/.app). The defaults are
+//   applied ONLY on first run — never re-merged on popup open — so the user
+//   can freely edit the list and it stays as saved (explicit Save button).
+// - The stored proxyActive flag can no longer drift from reality: the real
+//   state is read from chrome.proxy.settings.get (GET_STATE + startup sync).
+// - The IP is shown live: the popup renders the cached IP instantly and the
+//   background refreshes it in the background (6s timeout, lastGeoAt
+//   timestamp). A failed refresh never blanks a good cached IP.
+// - Connecting now verifies the proxy: the IP check runs right after the
+//   config is written and its result is stored; if the proxy does not
+//   respond, the popup is told the proxy may be unreachable instead of
+//   reporting a plain success.
+
 const ICON_PATHS = {
   active: {
     16: "ON-16.png",
@@ -12,6 +30,40 @@ const ICON_PATHS = {
     128: "OFF-128.png"
   }
 };
+
+// Curated Iran-only bypass list (2026-11-22). `*.ir` covers every .ir
+// domain; the rest are Iranian services on other TLDs. Single source of
+// truth — the popup gets this via GET_STATE for "reset to defaults".
+const DEFAULT_BYPASS = [
+  "*.ir", "<local>", "localhost", "127.0.0.1",
+  // Shopping & e-commerce
+  "digikala.com", "torob.com", "okala.com", "basalam.com", "banimode.com",
+  "khanumi.com", "digistyle.com", "janebi.com", "kalaoma.com", "modiseh.com",
+  "snapp.market", "sheypoor.com",
+  // Ride, delivery & food
+  "snapp.taxi", "alopeyk.com", "zoodfood.com", "delino.com",
+  // Banks, payment & fintech
+  "blubank.com", "zarinpal.com", "vandar.io", "mydigipay.com",
+  // Travel & insurance
+  "snapptrip.com", "flightio.com", "mrbilit.com", "eligasht.com",
+  "safarmarket.com", "jabama.com", "bimeh.com", "bimebazar.com", "azki.com",
+  // Messaging & social
+  "eitaa.com", "bale.ai", "gap.im", "igap.net", "virasty.com",
+  // Video & music
+  "aparat.com", "filimo.com", "telewebion.com", "tamasha.com", "radiojavan.com",
+  // News & media
+  "varzesh3.com", "mehrnews.com", "tasnimnews.com", "asriran.com",
+  "donya-e-eqtesad.com", "eghtesadnews.com", "digiato.com", "gadgetnews.net",
+  "techrato.com",
+  // Jobs, health & education
+  "karboom.io", "paziresh24.com", "faradars.org", "maktabkhooneh.org",
+  "taaghche.com", "fidibo.com",
+  // Classifieds & maps
+  "ninisite.com", "neshan.org"
+];
+const DEFAULT_BYPASS_TEXT = DEFAULT_BYPASS.join(", ");
+
+const IP_CHECK_TIMEOUT_MS = 6000;
 
 function logApiError(operation) {
   const error = chrome.runtime.lastError;
@@ -50,6 +102,39 @@ function setActionStatus(isActive, geoData) {
   });
 }
 
+// The real proxy state, read from Chrome itself (never trust the stored
+// flag alone — the proxy can be changed outside this extension).
+function getRealProxyState() {
+  return new Promise((resolve) => {
+    chrome.proxy.settings.get({}, (details) => {
+      if (logApiError("Reading proxy settings")) {
+        resolve({ active: false, host: "", port: "" });
+        return;
+      }
+      const single = details?.value?.rules?.singleProxy;
+      const active = details?.value?.mode === "fixed_servers" &&
+        single?.scheme === "socks5" && !!single.host;
+      resolve({
+        active,
+        host: active ? single.host : "",
+        port: active ? String(single.port || "") : ""
+      });
+    });
+  });
+}
+
+function normalizeBypassText(text) {
+  const seen = new Set();
+  return (typeof text === "string" ? text : "")
+    .split(",")
+    .map((item) => item.trim().toLowerCase())
+    .filter((item) => {
+      if (!item || seen.has(item)) return false;
+      seen.add(item);
+      return true;
+    });
+}
+
 function normalizeProxySettings(request) {
   const host = typeof request.ip === "string" ? request.ip.trim() : "";
   const portText = String(request.port ?? "").trim();
@@ -62,11 +147,8 @@ function normalizeProxySettings(request) {
     throw new Error("پورت باید عددی بین ۱ تا ۶۵۵۳۵ باشد.");
   }
 
-  const bypassList = (typeof request.bypass === "string" ? request.bypass : "")
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-  const normalizedBypass = new Set(bypassList.map((item) => item.toLowerCase()));
+  const bypassList = normalizeBypassText(request.bypass);
+  const normalizedBypass = new Set(bypassList);
   for (const localHost of ["localhost", "127.0.0.1"]) {
     if (!normalizedBypass.has(localHost)) bypassList.push(localHost);
   }
@@ -74,8 +156,7 @@ function normalizeProxySettings(request) {
   return { host, port, bypassList };
 }
 
-function setProxy(request) {
-  const { host, port, bypassList } = normalizeProxySettings(request);
+function applyProxyConfig(host, port, bypassList) {
   const config = {
     mode: "fixed_servers",
     rules: {
@@ -87,29 +168,31 @@ function setProxy(request) {
   return new Promise((resolve, reject) => {
     chrome.proxy.settings.set({ value: config, scope: "regular" }, () => {
       const proxyError = logApiError("Setting SOCKS5 proxy");
-      if (proxyError) {
-        reject(new Error(proxyError));
-        return;
-      }
-
-      chrome.storage.local.set({
-        savedIp: host,
-        savedPort: String(port),
-        savedBypass: request.bypass || "",
-        proxyActive: true,
-        lastGeoError: ""
-      }, () => {
-        const storageError = logApiError("Saving proxy settings");
-        if (storageError) {
-          reject(new Error(storageError));
-          return;
-        }
-
-        setActionStatus(true);
-        resolve();
-      });
+      if (proxyError) reject(new Error(proxyError));
+      else resolve();
     });
   });
+}
+
+async function setProxy(request) {
+  const { host, port, bypassList } = normalizeProxySettings(request);
+  await applyProxyConfig(host, port, bypassList);
+
+  await new Promise((resolve, reject) => {
+    chrome.storage.local.set({
+      savedIp: host,
+      savedPort: String(port),
+      savedBypass: normalizeBypassText(request.bypass).join(", "),
+      proxyActive: true,
+      lastGeoError: ""
+    }, () => {
+      const storageError = logApiError("Saving proxy settings");
+      if (storageError) reject(new Error(storageError));
+      else resolve();
+    });
+  });
+
+  setActionStatus(true);
 }
 
 function clearProxy() {
@@ -137,7 +220,7 @@ function clearProxy() {
 
 async function checkIPAndGeo(isProxyActive) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  const timeoutId = setTimeout(() => controller.abort(), IP_CHECK_TIMEOUT_MS);
 
   try {
     const response = await fetch("https://ipwho.is/", { signal: controller.signal });
@@ -149,7 +232,7 @@ async function checkIPAndGeo(isProxyActive) {
     }
 
     await new Promise((resolve, reject) => {
-      chrome.storage.local.set({ lastGeo: data, lastGeoError: "" }, () => {
+      chrome.storage.local.set({ lastGeo: data, lastGeoAt: Date.now(), lastGeoError: "" }, () => {
         const storageError = logApiError("Saving IP information");
         if (storageError) reject(new Error(storageError));
         else resolve();
@@ -162,6 +245,8 @@ async function checkIPAndGeo(isProxyActive) {
     const message = error.name === "AbortError"
       ? "بررسی IP بیش از حد طول کشید؛ اتصال اینترنت را بررسی کنید."
       : error.message || "بررسی IP ناموفق بود.";
+    // Keep the last good IP on screen: only store the error, never clear
+    // lastGeo here.
     chrome.storage.local.set({ lastGeoError: message }, () => {
       logApiError("Saving IP check error");
     });
@@ -171,69 +256,138 @@ async function checkIPAndGeo(isProxyActive) {
   }
 }
 
-function getProxyStatus() {
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.get(["proxyActive"], (data) => {
-      const storageError = logApiError("Reading proxy status");
-      if (storageError) {
-        reject(new Error(storageError));
-        return;
-      }
-      resolve(data.proxyActive === true);
-    });
-  });
+// Verify the proxy actually works after connecting: the IP check runs
+// through the proxy, so a failure means the server is unreachable.
+async function verifyAfterConnect() {
+  try {
+    const geo = await checkIPAndGeo(true);
+    return { ok: true, geo };
+  } catch (error) {
+    return { ok: false, error: error.message };
+  }
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "SET_PROXY") {
-    Promise.resolve().then(() => setProxy(request)).then(() => {
-      sendResponse({ success: true });
-      checkIPAndGeo(true).catch((error) => {
-        console.error("Refreshing IP after connecting proxy:", error);
+  (async () => {
+    if (request.action === "GET_STATE") {
+      const real = await getRealProxyState();
+      const data = await chrome.storage.local.get([
+        "savedIp", "savedPort", "savedBypass", "lastGeo", "lastGeoAt", "lastGeoError"
+      ]);
+      // Keep the stored flag in sync with reality.
+      if ((data.proxyActive === true) !== real.active) {
+        chrome.storage.local.set({ proxyActive: real.active });
+      }
+      sendResponse({
+        proxyActive: real.active,
+        savedIp: data.savedIp || real.host || "",
+        savedPort: data.savedPort || real.port || "",
+        savedBypass: typeof data.savedBypass === "string" ? data.savedBypass : "",
+        lastGeo: data.lastGeo || null,
+        lastGeoAt: data.lastGeoAt || 0,
+        lastGeoError: data.lastGeoError || "",
+        defaultBypass: DEFAULT_BYPASS_TEXT,
+        hasSavedBypass: typeof data.savedBypass === "string" && data.savedBypass.trim() !== ""
       });
-    }).catch((error) => {
-      sendResponse({ success: false, error: error.message });
-    });
-    return true;
-  }
-
-  if (request.action === "CLEAR_PROXY") {
-    clearProxy().then(() => {
-      sendResponse({ success: true });
-      checkIPAndGeo(false).catch((error) => {
-        console.error("Refreshing IP after disconnecting proxy:", error);
-      });
-    }).catch((error) => {
-      sendResponse({ success: false, error: error.message });
-    });
-    return true;
-  }
-
-  if (request.action === "FORCE_CHECK_IP") {
-    getProxyStatus().then((isActive) => {
-      setActionStatus(isActive);
-      return checkIPAndGeo(isActive);
-    }).then((geoData) => {
-      sendResponse({ success: true, geoData });
-    }).catch((error) => {
-      console.error("Checking public IP:", error);
-      sendResponse({ success: false, error: error.message });
-    });
-    return true;
-  }
-
-  return false;
-});
-
-getProxyStatus().then((isActive) => {
-  chrome.storage.local.get(["lastGeo"], (data) => {
-    const storageError = logApiError("Reading cached IP information");
-    if (storageError) {
-      setActionStatus(isActive);
       return;
     }
-    setActionStatus(isActive, data.lastGeo);
+
+    if (request.action === "SET_PROXY") {
+      try {
+        await setProxy(request);
+        sendResponse({ success: true });
+        // Verify in the background and push the result via storage; the
+        // popup listens and updates the IP / warning live.
+        const check = await verifyAfterConnect();
+        if (!check.ok) {
+          chrome.storage.local.set({
+            lastGeoError: "پروکسی وصل شد، ولی IP بررسی نشد — ممکن است سرور در دسترس نباشد."
+          });
+        }
+      } catch (error) {
+        sendResponse({ success: false, error: error.message });
+      }
+      return;
+    }
+
+    if (request.action === "CLEAR_PROXY") {
+      try {
+        await clearProxy();
+        sendResponse({ success: true });
+        checkIPAndGeo(false).catch((error) => {
+          console.error("Refreshing IP after disconnecting proxy:", error);
+        });
+      } catch (error) {
+        sendResponse({ success: false, error: error.message });
+      }
+      return;
+    }
+
+    if (request.action === "SAVE_BYPASS") {
+      try {
+        const bypassList = normalizeBypassText(request.bypass);
+        const bypassText = bypassList.join(", ");
+        await new Promise((resolve, reject) => {
+          chrome.storage.local.set({ savedBypass: bypassText }, () => {
+            const storageError = logApiError("Saving bypass list");
+            if (storageError) reject(new Error(storageError));
+            else resolve();
+          });
+        });
+        // If the proxy is active, apply the new list right away (explicit
+        // Save, not a silent popup-open side effect).
+        const real = await getRealProxyState();
+        let applied = false;
+        if (real.active && real.host) {
+          const data = await chrome.storage.local.get(["savedIp", "savedPort"]);
+          const host = data.savedIp || real.host;
+          const port = Number(data.savedPort || real.port);
+          if (host && Number.isInteger(port) && port >= 1 && port <= 65535) {
+            const { bypassList: fullList } = normalizeProxySettings({
+              ip: host,
+              port,
+              bypass: bypassText
+            });
+            await applyProxyConfig(host, port, fullList);
+            applied = true;
+          }
+        }
+        sendResponse({ success: true, applied, bypassText });
+      } catch (error) {
+        sendResponse({ success: false, error: error.message });
+      }
+      return;
+    }
+
+    if (request.action === "FORCE_CHECK_IP") {
+      try {
+        const real = await getRealProxyState();
+        const geoData = await checkIPAndGeo(real.active);
+        sendResponse({ success: true, geoData });
+      } catch (error) {
+        console.error("Checking public IP:", error);
+        sendResponse({ success: false, error: error.message });
+      }
+      return;
+    }
+  })().catch((error) => {
+    console.error("Message handling failed.", error);
+    sendResponse({ success: false, error: error.message || "خطای داخلی." });
   });
-}).catch((error) => {
+  return true;
+});
+
+// Startup: sync the icon/badge with the real proxy state and cached IP.
+(async () => {
+  const real = await getRealProxyState();
+  chrome.storage.local.get(["lastGeo"], (data) => {
+    if (logApiError("Reading cached IP information")) {
+      setActionStatus(real.active);
+      return;
+    }
+    chrome.storage.local.set({ proxyActive: real.active });
+    setActionStatus(real.active, data.lastGeo);
+  });
+})().catch((error) => {
   console.error("Initializing proxy status:", error);
 });

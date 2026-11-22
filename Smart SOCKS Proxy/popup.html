@@ -21,8 +21,13 @@
         <input type="number" id="proxy-port" placeholder="1080" min="1" max="65535" step="1">
       </div>
       <div class="input-group">
-        <label>دامنه‌های مستثنی شده (Bypass)</label>
+        <label>دامنه‌های مستثنی شده (Bypass) <span id="bypass-count" class="bypass-count"></span></label>
         <textarea id="bypass-list" placeholder="*.ir, &lt;local&gt;, localhost, 127.0.0.1"></textarea>
+        <p class="hint">فقط سرویس‌های ایرانی؛ برای عبور مستقیم از پروکسی. با دکمه ذخیره، لیست می‌ماند.</p>
+      </div>
+      <div class="btn-row">
+        <button id="btn-save-bypass" class="btn-secondary">💾 ذخیره لیست استثناها</button>
+        <button id="btn-reset-bypass" class="btn-ghost">بازنشانی به پیش‌فرض</button>
       </div>
       <div class="btn-row">
         <button id="btn-connect" disabled>اتصال</button>
@@ -38,7 +43,10 @@
       </div>
       <div class="status-row">
         <span>آی‌پی فعلی:</span>
-        <span id="ip-address" class="ip-text">در حال بررسی...</span>
+        <span class="ip-wrap">
+          <span id="ip-address" class="ip-text" title="برای کپی کلیک کنید">در حال بررسی...</span>
+          <span id="ip-checking" class="ip-checking" hidden>⟳</span>
+        </span>
       </div>
       <div class="status-row">
         <span>کشور IP:</span>
@@ -46,6 +54,9 @@
           <span id="country-code" class="country-code" hidden></span>
           <span id="geo-location">در حال بررسی...</span>
         </span>
+      </div>
+      <div class="ip-updated-row">
+        <span id="ip-updated" class="ip-updated"></span>
       </div>
       <div class="btn-row">
         <button id="btn-refresh">به‌روزرسانی IP</button>
