@@ -39,27 +39,44 @@ const DEFAULT_BYPASS = [
   // Shopping & e-commerce
   "digikala.com", "torob.com", "okala.com", "basalam.com", "banimode.com",
   "khanumi.com", "digistyle.com", "janebi.com", "kalaoma.com", "modiseh.com",
-  "snapp.market", "sheypoor.com",
+  "snapp.market", "sheypoor.com", "malltina.com", "timcheh.com",
   // Ride, delivery & food
   "snapp.taxi", "alopeyk.com", "zoodfood.com", "delino.com",
   // Banks, payment & fintech
   "blubank.com", "zarinpal.com", "vandar.io", "mydigipay.com",
+  "behpardakht.com",
+  // Crypto & stock market
+  "ramzinex.com", "ompfinex.com", "tsetmc.com", "sahamyab.com",
+  "emofid.com", "agah.com", "mofidonline.com", "farabixo.com",
+  "rahavard365.com",
   // Travel & insurance
   "snapptrip.com", "flightio.com", "mrbilit.com", "eligasht.com",
-  "safarmarket.com", "jabama.com", "bimeh.com", "bimebazar.com", "azki.com",
+  "safarmarket.com", "jabama.com", "hamgardi.com", "kojaro.com",
+  "eghamat24.com", "hotelyar.com", "bimeh.com", "bimebazar.com",
+  "azki.com", "bimeh365.com", "bimito.com",
   // Messaging & social
   "eitaa.com", "bale.ai", "gap.im", "igap.net", "virasty.com",
   // Video & music
-  "aparat.com", "filimo.com", "telewebion.com", "tamasha.com", "radiojavan.com",
+  "aparat.com", "filimo.com", "telewebion.com", "tamasha.com",
+  "radiojavan.com", "musicema.com", "bia2.com",
   // News & media
   "varzesh3.com", "mehrnews.com", "tasnimnews.com", "asriran.com",
   "donya-e-eqtesad.com", "eghtesadnews.com", "digiato.com", "gadgetnews.net",
-  "techrato.com",
+  "techrato.com", "jamaran.news", "sharghdaily.com", "khabarban.com",
+  "khabarfoori.com", "fararu.com", "jahannews.com", "rajanews.com",
+  "shafaqna.com", "abna24.com", "hawzahnews.com", "tejaratnews.com",
+  "eghtesadonline.com", "tahlilbazaar.com", "itresan.com",
+  "shahrekhabar.com", "ghatreh.com",
+  // Sports
+  "footballi.net", "tarafdari.com", "khabarvarzeshi.com",
   // Jobs, health & education
-  "karboom.io", "paziresh24.com", "faradars.org", "maktabkhooneh.org",
-  "taaghche.com", "fidibo.com",
-  // Classifieds & maps
-  "ninisite.com", "neshan.org"
+  "karboom.io", "karlancer.com", "paziresh24.com", "doctoreto.com",
+  "faradars.org", "maktabkhooneh.org", "taaghche.com", "fidibo.com",
+  "ketabrah.com", "takbook.com", "sanjesh.org", "classino.com",
+  "ostadbank.com", "zabanshenas.com",
+  // Cars, real estate, classifieds & maps
+  "khodro45.com", "hamrah-mechanic.com", "kilid.com", "shabash.com",
+  "melkana.com", "ninisite.com", "neshan.org"
 ];
 const DEFAULT_BYPASS_TEXT = DEFAULT_BYPASS.join(", ");
 
