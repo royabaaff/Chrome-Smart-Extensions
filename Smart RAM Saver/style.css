@@ -1,5 +1,4 @@
 :root {
-  /* دقیقاً همان پالت رنگی افزونه اول */
   --bg-color: #1a1a24;
   --card-bg: #222230;
   --text-main: #f0f0f0;
@@ -9,6 +8,7 @@
   --danger: #f74f5e;
   --border: #38384a;
   --input-bg: #14141d;
+  --hover-bg: #2a2a3b;
 }
 
 body {
@@ -43,17 +43,25 @@ body {
   border: 1px solid var(--border);
 }
 
-.input-group { 
-  margin-bottom: 12px; 
-  display: flex; 
-  justify-content: space-between; 
-  align-items: center; 
+.card:last-child { margin-bottom: 0; }
+
+.section-title {
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--text-main);
 }
 
-.input-group label { 
-  font-size: 13px; 
-  color: var(--text-muted); 
-  font-weight: bold; 
+.input-group {
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.input-group label {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: bold;
 }
 
 input[type="number"] {
@@ -75,7 +83,42 @@ input[type="number"]:focus {
   box-shadow: 0 0 0 2px rgba(77, 163, 255, 0.2);
 }
 
-.btn-row { display: flex; gap: 10px; margin-top: 15px; }
+.timeout-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.timeout-row .unit {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.presets {
+  display: flex;
+  gap: 4px;
+  margin-inline-start: auto;
+}
+
+.preset {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--input-bg);
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.preset:hover { border-color: var(--primary); color: var(--text-main); }
+.preset.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.btn-row { display: flex; gap: 10px; margin-top: 12px; }
 
 button {
   flex: 1;
@@ -93,9 +136,8 @@ button {
 button:active { transform: scale(0.96); }
 button:hover { opacity: 0.9; }
 
-/* هماهنگی رنگ دکمه‌ها با تم اصلی */
 .btn-primary { background-color: var(--primary); color: white; }
-.btn-danger { background-color: var(--danger); color: white; }
+.btn-danger { background-color: var(--danger); color: white; width: 100%; }
 
 .status-row {
   display: flex;
@@ -106,6 +148,7 @@ button:hover { opacity: 0.9; }
 }
 
 .toggle-btn {
+  flex: 0 0 auto;
   padding: 6px 15px;
   border-radius: 20px;
   font-size: 12px;
@@ -115,17 +158,12 @@ button:hover { opacity: 0.9; }
   border: none;
 }
 
-.toggle-btn.off { 
-  background-color: var(--border); 
-  color: var(--text-muted); 
+.toggle-btn.off {
+  background-color: var(--border);
+  color: var(--text-muted);
 }
 
 .domain-card { text-align: center; }
-
-.domain-heading {
-  font-size: 13px;
-  font-weight: bold;
-}
 
 .domain-name {
   direction: ltr;
@@ -142,7 +180,69 @@ button:hover { opacity: 0.9; }
   margin: 8px 0 0;
 }
 
-.status-text { min-height: 18px; }
+.status-text { min-height: 18px; font-size: 12px; color: var(--text-main); }
 .status-text.error { color: var(--danger); }
+
+.excluded-list,
+.frozen-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.excluded-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.excluded-item:first-child { border-top: none; }
+
+.excluded-name {
+  direction: ltr;
+  text-align: left;
+  overflow-wrap: anywhere;
+  color: var(--text-main);
+}
+
+.remove-btn {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.remove-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+.frozen-item { border-top: 1px solid var(--border); }
+.frozen-item:first-child { border-top: none; }
+
+.frozen-btn {
+  display: block;
+  width: 100%;
+  padding: 8px 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: normal;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.frozen-btn:hover { color: var(--primary); opacity: 1; }
 
 button:disabled { cursor: wait; opacity: 0.6; }

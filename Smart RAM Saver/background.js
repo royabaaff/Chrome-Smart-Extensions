@@ -1,7 +1,37 @@
+// Smart RAM Saver — background service worker.
+//
+// v2.2 changes:
+// - Settings are cached in memory (loaded once on startup/install, kept in
+//   sync via storage.onChanged) instead of being re-read from storage on
+//   every tab event.
+// - The toolbar icon now reflects only the global on/off state. The old
+//   per-tab icon mixed two meanings (global state + per-domain exclusion),
+//   and the active tab showed ON even though it can never be discarded.
+//   Exclusion state for the current site is shown clearly in the popup.
+// - Auto-discard no longer depends only on tab.lastAccessed (which Chrome
+//   may not provide). The worker tracks when each tab became inactive, so
+//   the timeout works even when lastAccessed is missing.
+
 const ICON_PATHS = {
   on: { 16: "ON-16.png", 32: "ON-32.png", 48: "ON-48.png", 128: "ON-128.png" },
   off: { 16: "OFF-16.png", 32: "OFF-32.png", 48: "OFF-48.png", 128: "OFF-128.png" }
 };
+
+const DEFAULT_TIMEOUT_MINUTES = 5;
+
+// In-memory settings cache. Loaded on startup/install; updated on change.
+const settings = {
+  autoDiscardActive: true,
+  discardTimeout: DEFAULT_TIMEOUT_MINUTES,
+  ramAutoDomains: []
+};
+
+// When each tab last stopped being the active tab (ms since epoch).
+// Used as the "last used" time when tab.lastAccessed is unavailable.
+const inactiveSince = new Map();
+// The currently active tab id (per window is overkill; one global active tab
+// is enough to know when a tab stops being active).
+let activeTabId = null;
 
 function reportApiError(operation) {
   if (chrome.runtime.lastError) {
@@ -22,53 +52,46 @@ function hostnameForUrl(urlString) {
   }
 }
 
-function setIcon(isActive, tabId) {
-  const options = { path: isActive ? ICON_PATHS.on : ICON_PATHS.off };
-  if (Number.isInteger(tabId)) options.tabId = tabId;
-
-  chrome.action.setIcon(options, () => reportApiError("Setting extension icon"));
+async function loadSettings() {
+  const data = await chrome.storage.local.get(["autoDiscardActive", "discardTimeout", "ramAutoDomains"]);
+  settings.autoDiscardActive = data.autoDiscardActive !== false;
+  settings.discardTimeout = Number.isFinite(data.discardTimeout)
+    ? Math.min(120, Math.max(1, data.discardTimeout))
+    : DEFAULT_TIMEOUT_MINUTES;
+  settings.ramAutoDomains = Array.isArray(data.ramAutoDomains) ? data.ramAutoDomains : [];
 }
 
-function refreshIcons() {
-  chrome.storage.local.get(["autoDiscardActive", "ramAutoDomains"], (settings) => {
-    if (reportApiError("Reading icon settings")) return;
-
-    const isActive = settings.autoDiscardActive !== false;
-    const autoDomains = Array.isArray(settings.ramAutoDomains) ? settings.ramAutoDomains : [];
-    setIcon(isActive);
-
-    chrome.tabs.query({}, (tabs) => {
-      if (reportApiError("Reading tabs for icon refresh")) return;
-
-      tabs.forEach((tab) => {
-        const hostname = hostnameForUrl(tab.url);
-        if (!Number.isInteger(tab.id)) return;
-        setIcon(isActive && (!hostname || !autoDomains.includes(hostname)), tab.id);
-      });
-    });
-  });
+function refreshIcon() {
+  chrome.action.setIcon(
+    { path: settings.autoDiscardActive ? ICON_PATHS.on : ICON_PATHS.off },
+    () => reportApiError("Setting extension icon")
+  );
 }
 
-function updateTabIcon(tabId, url) {
-  const hostname = hostnameForUrl(url);
-  chrome.storage.local.get(["autoDiscardActive", "ramAutoDomains"], (settings) => {
-    if (reportApiError("Reading tab icon settings")) return;
-    const isActive = settings.autoDiscardActive !== false;
-    const autoDomains = Array.isArray(settings.ramAutoDomains) ? settings.ramAutoDomains : [];
-    setIcon(isActive && (!hostname || !autoDomains.includes(hostname)), tabId);
-  });
+// The most reliable "last used" time for a tab: the later of Chrome's
+// lastAccessed and the moment we saw it stop being active. Returns null
+// when neither is known, in which case the tab is never auto-discarded.
+function effectiveLastUsed(tab) {
+  const candidates = [];
+  if (Number.isFinite(tab.lastAccessed) && tab.lastAccessed > 0) candidates.push(tab.lastAccessed);
+  const inactiveAt = inactiveSince.get(tab.id);
+  if (Number.isFinite(inactiveAt) && inactiveAt > 0) candidates.push(inactiveAt);
+  if (candidates.length === 0) return null;
+  return Math.max(...candidates);
 }
 
-function discardEligibleTabs(tabs, autoDomains, timeoutMilliseconds) {
+function discardEligibleTabs(tabs, timeoutMilliseconds) {
   const now = Date.now();
   return tabs.filter((tab) => {
     if (!Number.isInteger(tab.id) || tab.discarded || tab.active || tab.audible || tab.pinned) return false;
 
     const hostname = hostnameForUrl(tab.url);
-    if (!hostname || autoDomains.includes(hostname)) return false;
+    if (!hostname || settings.ramAutoDomains.includes(hostname)) return false;
 
-    return timeoutMilliseconds === null ||
-      now - (tab.lastAccessed || now) >= timeoutMilliseconds;
+    if (timeoutMilliseconds === null) return true; // "Discard now": no timeout.
+    const lastUsed = effectiveLastUsed(tab);
+    if (lastUsed === null) return false; // No reliable time: never auto-discard.
+    return now - lastUsed >= timeoutMilliseconds;
   });
 }
 
@@ -89,71 +112,81 @@ function discardTabs(tabs, sendResponse) {
   });
 }
 
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener(async () => {
+  await loadSettings();
   chrome.alarms.create("checkTabsMemory", { periodInMinutes: 1 });
-  refreshIcons();
+  refreshIcon();
 });
 
-chrome.runtime.onStartup.addListener(() => {
+chrome.runtime.onStartup.addListener(async () => {
+  await loadSettings();
   chrome.alarms.create("checkTabsMemory", { periodInMinutes: 1 });
-  refreshIcons();
+  refreshIcon();
+  // Seed "became inactive" for tabs that were already open: without a
+  // record they would never be auto-discarded when lastAccessed is missing.
+  chrome.tabs.query({ active: false, discarded: false }, (tabs) => {
+    if (reportApiError("Seeding inactive times")) return;
+    const now = Date.now();
+    tabs.forEach((tab) => {
+      if (Number.isInteger(tab.id) && !inactiveSince.has(tab.id)) inactiveSince.set(tab.id, now);
+    });
+  });
 });
 
 chrome.storage.onChanged.addListener((changes, namespace) => {
-  if (namespace === "local" &&
-      (changes.autoDiscardActive !== undefined || changes.ramAutoDomains !== undefined)) {
-    refreshIcons();
+  if (namespace !== "local") return;
+  if (changes.autoDiscardActive !== undefined) {
+    settings.autoDiscardActive = changes.autoDiscardActive.newValue !== false;
+    refreshIcon();
+  }
+  if (changes.discardTimeout !== undefined && Number.isFinite(changes.discardTimeout.newValue)) {
+    settings.discardTimeout = Math.min(120, Math.max(1, changes.discardTimeout.newValue));
+  }
+  if (changes.ramAutoDomains !== undefined) {
+    settings.ramAutoDomains = Array.isArray(changes.ramAutoDomains.newValue)
+      ? changes.ramAutoDomains.newValue
+      : [];
   }
 });
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.url || changeInfo.status === "complete") updateTabIcon(tabId, tab.url);
+// Track when a tab stops being active, so auto-discard works even without
+// tab.lastAccessed.
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  const now = Date.now();
+  if (Number.isInteger(activeTabId) && activeTabId !== activeInfo.tabId) {
+    inactiveSince.set(activeTabId, now);
+  }
+  activeTabId = activeInfo.tabId;
+  inactiveSince.delete(activeInfo.tabId);
 });
 
-chrome.tabs.onActivated.addListener((activeInfo) => {
-  chrome.tabs.get(activeInfo.tabId, (tab) => {
-    if (reportApiError("Reading activated tab")) return;
-    updateTabIcon(tab.id, tab.url);
-  });
+chrome.tabs.onRemoved.addListener((tabId) => {
+  inactiveSince.delete(tabId);
+  if (activeTabId === tabId) activeTabId = null;
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action !== "DISCARD_ALL_NOW") return;
 
-  chrome.storage.local.get(["ramAutoDomains"], (settings) => {
-    if (reportApiError("Reading domain exclusions")) {
+  chrome.tabs.query({ active: false, discarded: false }, (tabs) => {
+    if (reportApiError("Reading tabs to discard")) {
       sendResponse({ discarded: 0, error: true });
       return;
     }
-
-    const autoDomains = Array.isArray(settings.ramAutoDomains) ? settings.ramAutoDomains : [];
-    chrome.tabs.query({ active: false, discarded: false }, (tabs) => {
-      if (reportApiError("Reading tabs to discard")) {
-        sendResponse({ discarded: 0, error: true });
-        return;
-      }
-      discardTabs(discardEligibleTabs(tabs, autoDomains, null), sendResponse);
-    });
+    discardTabs(discardEligibleTabs(tabs, null), sendResponse);
   });
   return true;
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name !== "checkTabsMemory") return;
+  if (alarm.name !== "checkTabsMemory" || settings.autoDiscardActive === false) return;
 
-  chrome.storage.local.get(["autoDiscardActive", "discardTimeout", "ramAutoDomains"], (settings) => {
-    if (reportApiError("Reading discard settings") || settings.autoDiscardActive === false) return;
-
-    const timeoutMinutes = Number.isFinite(settings.discardTimeout)
-      ? Math.min(120, Math.max(1, settings.discardTimeout))
-      : 5;
-    const autoDomains = Array.isArray(settings.ramAutoDomains) ? settings.ramAutoDomains : [];
-    chrome.tabs.query({ active: false, discarded: false }, (tabs) => {
-      if (reportApiError("Reading tabs for automatic discard")) return;
-      discardEligibleTabs(tabs, autoDomains, timeoutMinutes * 60 * 1000)
-        .forEach((tab) => chrome.tabs.discard(tab.id, () => reportApiError(`Discarding tab ${tab.id}`)));
-    });
+  chrome.tabs.query({ active: false, discarded: false }, (tabs) => {
+    if (reportApiError("Reading tabs for automatic discard")) return;
+    discardEligibleTabs(tabs, settings.discardTimeout * 60 * 1000)
+      .forEach((tab) => chrome.tabs.discard(tab.id, () => reportApiError(`Discarding tab ${tab.id}`)));
   });
 });
 
-refreshIcons();
+// Load settings and set the icon when the worker wakes.
+loadSettings().then(refreshIcon);

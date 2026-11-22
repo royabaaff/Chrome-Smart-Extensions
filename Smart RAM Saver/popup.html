@@ -13,24 +13,32 @@
   <div class="container">
     <div class="card">
       <div class="status-row">
-        <span style="font-weight: bold;">وضعیت سیستم فریز:</span>
+        <span class="section-title">وضعیت سیستم فریز</span>
         <button id="btn-toggle" class="toggle-btn on">فعال</button>
       </div>
       <p id="tabs-status" class="status-text" role="status">در حال دریافت وضعیت تب‌ها…</p>
-      <hr style="border: 0; border-top: 1px solid var(--border); margin: 12px 0;">
-      
-      <div class="input-group">
-        <label>فریز بعد از (دقیقه):</label>
-        <input type="number" id="timeout-input" min="1" max="120" value="5">
+      <p class="hint">فریز کردن، تب را می‌بندد ولی در نوار تب می‌ماند؛ با کلیک روی آن دوباره لود می‌شود. اطلاعات تایپ‌شده و ذخیره‌نشده در فرم‌ها ممکن است از دست برود.</p>
+    </div>
+
+    <div class="card">
+      <div class="section-title">فریز بعد از</div>
+      <div class="timeout-row">
+        <input type="number" id="timeout-input" min="1" max="120" value="5" aria-label="فریز بعد از چند دقیقه">
+        <span class="unit">دقیقه</span>
+        <div class="presets" role="group" aria-label="زمان‌های آماده">
+          <button type="button" class="preset" data-minutes="5">۵</button>
+          <button type="button" class="preset" data-minutes="15">۱۵</button>
+          <button type="button" class="preset" data-minutes="30">۳۰</button>
+          <button type="button" class="preset" data-minutes="60">۶۰</button>
+        </div>
       </div>
-      
       <div class="btn-row">
         <button id="btn-save" class="btn-primary">ذخیره زمان</button>
       </div>
     </div>
 
     <div class="card domain-card">
-      <div class="domain-heading">استثنای سایت فعلی</div>
+      <div class="section-title">استثنای سایت فعلی</div>
       <div id="current-domain" class="domain-name">در حال بررسی…</div>
       <button id="btn-auto-domain" class="toggle-btn off" type="button" disabled>
         این سایت: عادی
@@ -38,8 +46,21 @@
       <p class="hint">تب‌های این سایت به‌صورت خودکار فریز نمی‌شوند.</p>
     </div>
 
-    <div class="card" style="padding: 10px 15px;">
-      <button id="btn-discard-now" class="btn-danger" style="width: 100%;">🧹 فریز فوری تب‌های غیرفعالِ مجاز</button>
+    <div class="card">
+      <div class="section-title">سایت‌های مستثنا</div>
+      <ul id="excluded-list" class="excluded-list"></ul>
+      <p id="excluded-empty" class="hint">هیچ سایتی مستثنا نیست.</p>
+    </div>
+
+    <div class="card">
+      <div class="section-title">تب‌های فریز شده</div>
+      <ul id="frozen-list" class="frozen-list"></ul>
+      <p id="frozen-empty" class="hint">در حال حاضر تبی فریز نشده است.</p>
+      <p id="frozen-more" class="hint"></p>
+    </div>
+
+    <div class="card">
+      <button id="btn-discard-now" class="btn-danger">🧹 فریز فوری تب‌های غیرفعالِ مجاز</button>
       <p class="hint">تب فعال، تب‌های پین‌شده، در حال پخش صدا و سایت‌های مستثنا دست‌نخورده می‌مانند.</p>
     </div>
   </div>

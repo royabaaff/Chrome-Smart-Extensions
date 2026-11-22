@@ -6,6 +6,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const inputTimeout = document.getElementById('timeout-input');
   const domainText = document.getElementById('current-domain');
   const tabsStatus = document.getElementById('tabs-status');
+  const excludedList = document.getElementById('excluded-list');
+  const excludedEmpty = document.getElementById('excluded-empty');
+  const frozenList = document.getElementById('frozen-list');
+  const frozenEmpty = document.getElementById('frozen-empty');
+  const frozenMore = document.getElementById('frozen-more');
+
+  const MAX_FROZEN_SHOWN = 10;
 
   function showError(message) {
     tabsStatus.textContent = message;
@@ -32,12 +39,90 @@ document.addEventListener('DOMContentLoaded', () => {
       : 'استثنای این سایت: خاموش';
   }
 
+  function updatePresetUI(minutes) {
+    document.querySelectorAll('.preset').forEach((button) => {
+      button.classList.toggle('active', Number(button.dataset.minutes) === minutes);
+    });
+  }
+
+  // The full exclusion list, with a remove button per site.
+  function renderExcludedList(domains) {
+    excludedList.replaceChildren();
+    excludedEmpty.style.display = domains.length ? 'none' : '';
+    domains.forEach((domain) => {
+      const item = document.createElement('li');
+      item.className = 'excluded-item';
+
+      const name = document.createElement('span');
+      name.className = 'excluded-name';
+      name.textContent = domain;
+
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'remove-btn';
+      remove.textContent = '✕';
+      remove.title = 'حذف استثنا';
+      remove.setAttribute('aria-label', `حذف استثنای ${domain}`);
+      remove.addEventListener('click', () => removeExcludedDomain(domain));
+
+      item.append(name, remove);
+      excludedList.appendChild(item);
+    });
+  }
+
+  async function removeExcludedDomain(domain) {
+    const data = await chrome.storage.local.get(['ramAutoDomains']);
+    if (reportApiError('Reading domain exclusions')) return;
+    const domains = Array.isArray(data.ramAutoDomains) ? data.ramAutoDomains : [];
+    const updated = domains.filter((d) => d !== domain);
+    await chrome.storage.local.set({ ramAutoDomains: updated });
+    if (reportApiError('Saving domain exclusion')) return;
+    renderExcludedList(updated);
+    // Keep the current-site button in sync if this was the current site.
+    if (btnAutoDomain.dataset.hostname === domain) updateAutoDomainUI(false);
+  }
+
+  // Frozen tabs, click one to bring it back (activating reloads it).
+  function renderFrozenList(tabs) {
+    const frozen = tabs.filter((tab) => tab.discarded);
+    frozenList.replaceChildren();
+    frozenEmpty.style.display = frozen.length ? 'none' : '';
+    frozenMore.textContent = frozen.length > MAX_FROZEN_SHOWN
+      ? `و ${frozen.length - MAX_FROZEN_SHOWN} تب دیگر…`
+      : '';
+    frozen.slice(0, MAX_FROZEN_SHOWN).forEach((tab) => {
+      const item = document.createElement('li');
+      item.className = 'frozen-item';
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'frozen-btn';
+      button.textContent = tab.title || tab.url || 'تب بدون عنوان';
+      button.title = tab.url || '';
+      button.addEventListener('click', () => {
+        chrome.tabs.update(tab.id, { active: true }, () => {
+          if (reportApiError('Restoring frozen tab')) return;
+          window.close();
+        });
+      });
+      item.appendChild(button);
+      frozenList.appendChild(item);
+    });
+    return frozen.length;
+  }
+
   function updateTabStats() {
     chrome.tabs.query({}, (tabs) => {
       if (reportApiError('Reading tab counts')) return;
-      const discarded = tabs.filter((tab) => tab.discarded).length;
+      const discarded = renderFrozenList(tabs);
       tabsStatus.classList.remove('error');
       tabsStatus.textContent = `${discarded} تب فریز شده از ${tabs.length} تب`;
+    });
+  }
+
+  function loadExcludedList() {
+    chrome.storage.local.get(['ramAutoDomains'], (data) => {
+      if (reportApiError('Reading domain exclusions')) return;
+      renderExcludedList(Array.isArray(data.ramAutoDomains) ? data.ramAutoDomains : []);
     });
   }
 
@@ -71,11 +156,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if (reportApiError('Reading saved settings')) return;
 
       updateToggleUI(data.autoDiscardActive !== false);
-      inputTimeout.value = Number.isFinite(data.discardTimeout)
+      const timeout = Number.isFinite(data.discardTimeout)
         ? Math.min(120, Math.max(1, data.discardTimeout))
         : 5;
+      inputTimeout.value = timeout;
+      updatePresetUI(timeout);
       const autoDomains = Array.isArray(data.ramAutoDomains) ? data.ramAutoDomains : [];
       updateAutoDomainUI(hostname ? autoDomains.includes(hostname) : false);
+      renderExcludedList(autoDomains);
     });
   });
 
@@ -112,8 +200,23 @@ document.addEventListener('DOMContentLoaded', () => {
         btnAutoDomain.disabled = false;
         if (reportApiError('Saving domain exclusion')) return;
         updateAutoDomainUI(isNowExcluded);
+        renderExcludedList(updatedDomains);
       });
     });
+  });
+
+  // Quick presets: tap one to fill in and save that timeout.
+  document.querySelectorAll('.preset').forEach((button) => {
+    button.addEventListener('click', () => {
+      const minutes = Number(button.dataset.minutes);
+      inputTimeout.value = minutes;
+      updatePresetUI(minutes);
+      btnSave.click();
+    });
+  });
+
+  inputTimeout.addEventListener('input', () => {
+    updatePresetUI(Number.parseInt(inputTimeout.value, 10));
   });
 
   btnSave.addEventListener('click', () => {
@@ -126,6 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const newTimeout = Math.min(120, Math.max(1, requestedTimeout));
     inputTimeout.value = newTimeout;
+    updatePresetUI(newTimeout);
     btnSave.disabled = true;
     chrome.storage.local.set({ discardTimeout: newTimeout }, () => {
       btnSave.disabled = false;
