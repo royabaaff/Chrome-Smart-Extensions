@@ -1,11 +1,12 @@
 {
   "manifest_version": 3,
   "name": "Smart Bookmark Manager",
-  "version": "2.0",
+  "version": "2.1",
   "description": "مدیریت و دسته‌بندی بوک‌مارک‌های کروم",
   "permissions": [
     "bookmarks",
-    "tabs"
+    "tabs",
+    "storage"
   ],
   "action": {
     "default_popup": "popup.html",
