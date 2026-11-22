@@ -12,20 +12,20 @@
 
     <div class="card">
       <div class="status-row">
-        <span style="font-weight: bold;">راست‌چین روی این تب:</span>
+        <span class="section-title">راست‌چین روی این صفحه</span>
         <button id="btn-manual-toggle" class="toggle-btn off">غیرفعال</button>
       </div>
+      <p id="page-status" class="status-text" role="status">در حال بررسی…</p>
+      <p class="hint">روشن کردن، راست‌چین را برای همین سایت ذخیره می‌کند؛ با ریلود صفحه هم می‌ماند.</p>
+    </div>
 
-      <hr style="border: 0; border-top: 1px solid var(--border); margin: 12px 0;">
-
-      <!-- بخش تغییر سایز فونت -->
-      <div class="status-row">
-        <span>سایز فونت:</span>
-        <div style="display: flex; align-items: center; gap: 8px; direction: ltr;">
-          <button id="btn-font-minus" class="font-btn" aria-label="کوچک کردن فونت">-</button>
-          <span id="font-size-display" style="font-weight: bold; width: 35px; text-align: center; font-family: sans-serif; font-size: 14px;">16px</span>
-          <button id="btn-font-plus" class="font-btn" aria-label="بزرگ کردن فونت">+</button>
-        </div>
+    <div class="card">
+      <div class="section-title">اندازه و فونت متن</div>
+      <div class="font-row">
+        <button id="btn-font-minus" class="font-btn" aria-label="کوچک کردن فونت">−</button>
+        <input type="range" id="font-size-slider" min="10" max="36" step="1" value="16" aria-label="اندازه فونت">
+        <button id="btn-font-plus" class="font-btn" aria-label="بزرگ کردن فونت">+</button>
+        <span id="font-size-display" class="font-size-display">16px</span>
       </div>
       <div class="status-row">
         <label for="font-family-select">نوع فونت:</label>
@@ -36,16 +36,23 @@
         </select>
       </div>
       <button id="btn-reset-appearance" class="reset-btn">بازنشانی ظاهر</button>
+      <p id="font-hint" class="hint">اندازه و فونت فقط وقتی اعمال می‌شوند که راست‌چین روی این صفحه فعال باشد.</p>
     </div>
 
     <div class="card">
-      <div style="font-size: 13px; font-weight: bold; margin-bottom: 5px;">⚡ اعمال خودکار روی سایت:</div>
+      <div class="section-title">⚡ اعمال خودکار روی سایت</div>
       <span id="current-domain" class="domain-text">...</span>
-      <hr style="border: 0; border-top: 1px solid var(--border); margin: 12px 0;">
       <div class="status-row">
         <span>همیشه راست‌چین شود:</span>
         <button id="btn-auto-toggle" class="toggle-btn off">خاموش</button>
       </div>
+      <p class="hint">با روشن کردن، این سایت همیشه (حتی در تب‌های جدید) راست‌چین می‌شود.</p>
+    </div>
+
+    <div class="card">
+      <div class="section-title">سایت‌هایی که راست‌چین برایشان روشن است</div>
+      <ul id="sites-list" class="sites-list"></ul>
+      <p id="sites-empty" class="hint">هنوز سایتی ذخیره نشده است.</p>
     </div>
 
   </div>

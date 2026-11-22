@@ -1,10 +1,40 @@
-/* ۱. راست‌چین، تعیین لاین-هایت و اعمال فونت فقط روی باکس‌های چت و پیام‌ها */
+/* Smart RTL Fixer — page styles (applied only while data-rtl-active is set).
+ *
+ * v2.3:
+ * - RTL is scoped to chat/message content only. Menus, navigation, sidebars
+ *   and headers are explicitly kept LTR, so the whole page no longer flips.
+ * - Coverage is wider: generic markdown/chat selectors plus the containers
+ *   used by the major AI chats, instead of only a few class names.
+ * - The narrow centered chat column is widened so the conversation uses the
+ *   full page width instead of just getting bigger inside a narrow column.
+ * - Code keeps the site's own syntax highlighting (no forced dark colours).
+ *   Code blocks get a neutral, theme-friendly box and a copy button.
+ */
+
+/* ۰. Page chrome stays LTR: menus, nav, sidebars, headers. */
+html[data-rtl-active="true"] nav,
+html[data-rtl-active="true"] header,
+html[data-rtl-active="true"] aside,
+html[data-rtl-active="true"] [role="navigation"],
+html[data-rtl-active="true"] [role="banner"],
+html[data-rtl-active="true"] [role="complementary"],
+html[data-rtl-active="true"] [class*="sidebar"] {
+    direction: ltr !important;
+    text-align: left !important;
+}
+
+/* ۱. RTL + font on chat/message content only. */
 html[data-rtl-active="true"] .message-content,
 html[data-rtl-active="true"] .prose,
 html[data-rtl-active="true"] .markdown-body,
-html[data-rtl-active="true"] [class*="message"],
+html[data-rtl-active="true"] [class*="markdown"],
+html[data-rtl-active="true"] [class*="chat-message"],
 html[data-rtl-active="true"] [class*="chat-bubble"],
-html[data-rtl-active="true"] [class*="chat-message"] {
+html[data-rtl-active="true"] [class*="message-content"],
+html[data-rtl-active="true"] [data-message-author-role],
+html[data-rtl-active="true"] .font-claude-message,
+html[data-rtl-active="true"] .model-response-text,
+html[data-rtl-active="true"] [class*="response-content"] {
     direction: rtl !important;
     text-align: right !important;
     font-family: var(--rtl-font-family, 'Vazirmatn', 'Yekan Bakh', Tahoma, sans-serif) !important;
@@ -12,46 +42,71 @@ html[data-rtl-active="true"] [class*="chat-message"] {
     font-size: var(--rtl-custom-font-size, 16px) !important;
 }
 
-/* ۲. اعمال سایز فونت روی پاراگراف‌ها داخل همان باکس‌ها */
+/* ۲. Same for paragraphs inside those boxes. */
 html[data-rtl-active="true"] .message-content p,
 html[data-rtl-active="true"] .prose p,
 html[data-rtl-active="true"] .markdown-body p,
-html[data-rtl-active="true"] [class*="message"] p {
+html[data-rtl-active="true"] [class*="markdown"] p,
+html[data-rtl-active="true"] [class*="chat-message"] p,
+html[data-rtl-active="true"] [data-message-author-role] p {
     direction: rtl !important;
     text-align: right !important;
     font-family: var(--rtl-font-family, 'Vazirmatn', 'Yekan Bakh', Tahoma, sans-serif) !important;
     font-size: var(--rtl-custom-font-size, 16px) !important;
 }
 
-/* ۳. محافظت از کدهای برنامه‌نویسی برای جلوگیری از به هم ریختن */
+/* ۳. Widen the chat column: use the full page width. */
+html[data-rtl-active="true"] .message-content,
+html[data-rtl-active="true"] .prose,
+html[data-rtl-active="true"] .markdown-body,
+html[data-rtl-active="true"] [class*="markdown"],
+html[data-rtl-active="true"] [class*="chat-message"],
+html[data-rtl-active="true"] [class*="chat-bubble"],
+html[data-rtl-active="true"] [data-message-author-role] {
+    max-width: 100% !important;
+}
+
+/* The narrow centered column most AI chats use (Tailwind max-w-*). */
+html[data-rtl-active="true"] main [class*="max-w-"],
+html[data-rtl-active="true"] article [class*="max-w-"] {
+    max-width: min(1150px, 95%) !important;
+}
+
+/* ۴. Code stays LTR and monospace. Inline code gets a subtle box so it
+ * reads as code, not body text. The site's own syntax colours are kept. */
 html[data-rtl-active="true"] code,
 html[data-rtl-active="true"] kbd,
 html[data-rtl-active="true"] tt {
-    background-color: #282c34 !important;
-    color: #98c379 !important;
     font-family: 'Ubuntu Mono', Consolas, monospace !important;
-    border-radius: 5px !important;
-    padding: 2px 6px !important;
     direction: ltr !important;
     unicode-bidi: isolate !important;
     font-size: var(--rtl-code-font-size, 14px) !important;
-    border: 1px solid #3e4451 !important;
+}
+
+html[data-rtl-active="true"] :not(pre) > code {
+    background: rgba(128, 128, 128, 0.14) !important;
+    border: 1px solid rgba(128, 128, 128, 0.28) !important;
+    border-radius: 6px !important;
+    padding: 2px 6px !important;
     margin: 0 3px !important;
     display: inline-block !important;
 }
 
+/* ۵. Code blocks: a neutral box (works on light and dark pages) that can be
+ * copied, with the site's syntax highlighting left intact. */
 html[data-rtl-active="true"] pre {
-    background-color: #1e1e24 !important;
+    background: rgba(128, 128, 128, 0.10) !important;
+    border: 1px solid rgba(128, 128, 128, 0.28) !important;
     direction: ltr !important;
     text-align: left !important;
     padding: 16px !important;
-    border-radius: 8px !important;
-    border: 1px solid #3e4451 !important;
+    border-radius: 10px !important;
+    position: relative !important;
+    overflow-x: auto !important;
 }
 
 html[data-rtl-active="true"] pre code {
-    background-color: transparent !important;
-    color: #abb2bf !important;
+    background: transparent !important;
     border: none !important;
     padding: 0 !important;
     margin: 0 !important;
@@ -60,6 +115,28 @@ html[data-rtl-active="true"] pre code {
     line-height: 1.6 !important;
 }
 
+/* ۶. The copy button injected by content.js (top-right of the code box). */
+html[data-rtl-active="true"] .smart-rtl-copy-btn {
+    position: absolute !important;
+    top: 8px !important;
+    right: 8px !important;
+    padding: 4px 12px !important;
+    border-radius: 999px !important;
+    border: 1px solid rgba(128, 128, 128, 0.45) !important;
+    background: rgba(50, 50, 50, 0.85) !important;
+    color: #fff !important;
+    font-size: 11px !important;
+    font-family: Tahoma, sans-serif !important;
+    cursor: pointer !important;
+    z-index: 5 !important;
+    direction: rtl !important;
+}
+
+html[data-rtl-active="true"] .smart-rtl-copy-btn:hover {
+    background: rgba(30, 30, 30, 0.95) !important;
+}
+
+/* ۷. Keep code-area tool buttons readable. */
 html[data-rtl-active="true"] [data-smart-rtl-code-tool] svg,
 html[data-rtl-active="true"] [data-smart-rtl-code-tool] i {
     width: 20px !important;

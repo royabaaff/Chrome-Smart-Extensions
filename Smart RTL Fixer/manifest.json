@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Smart RTL Fixer",
-  "version": "2.2",
+  "version": "2.3",
   "description": "راست‌چین هوشمند صفحات، انتخاب فونت و اندازه متن با حفظ خوانایی کدها",
   "permissions": [
     "activeTab",
