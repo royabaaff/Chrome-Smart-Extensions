@@ -10,7 +10,7 @@ independently.
 | Smart Style & Font | 1.2 | Inspect any element's styles and colors, with a page palette |
 | Smart Bookmark Manager | 2.1 | Save tabs into categorized bookmark folders |
 | Smart RAM Saver | 2.2 | Freeze inactive tabs to save memory |
-| Smart RTL Fixer | 2.3 | Right-to-left chat pages, full-width layout, copyable code |
+| Smart RTL Fixer | 2.4 | Right-to-left chat text, full-width layout, code keeps site colours |
 | Smart SOCKS Proxy | 2.5 | SOCKS5 proxy with a curated Iran-only bypass list and live IP |
 
 ---
@@ -131,15 +131,18 @@ the tab bar — click one to reload it.
 
 ---
 
-## Smart RTL Fixer — v2.3
+## Smart RTL Fixer — v2.4
 
 Right-to-left layout and typography for chat pages and AI assistants
 (ChatGPT, Claude, Gemini, DeepSeek, and others).
 
 **Features**
 
-- RTL is applied to **chat/message content only** — menus, navigation,
-  sidebars, and headers stay left-to-right.
+- RTL is applied to **message text only** (paragraphs, list items,
+  headings inside the chat message) — the page layout, sidebar,
+  header, input box and buttons stay exactly as the site made them.
+- **Code keeps the site's own colours:** code blocks are left alone,
+  so syntax highlighting looks exactly as before.
 - **Full-width layout:** the narrow centered chat column is widened so
   the conversation uses the full page width.
 - **Font:** Vazirmatn / Tahoma / system font, size 10–36 px (slider and
@@ -307,6 +310,8 @@ and note anything that does not behave as described.
 
 ## Changelog
 
+- **Smart RTL Fixer 2.4** — RTL only on message text (no more
+  whole-page flip), code blocks keep the site's syntax colours.
 - **Smart SOCKS Proxy 2.5** — Bypass list expanded to 112 entries
   (all non-`.ir` Iranian services verified to resolve).
 - **Smart SOCKS Proxy 2.4** — Save button for the bypass list, live IP
