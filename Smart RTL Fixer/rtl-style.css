@@ -1,40 +1,82 @@
 /* Smart RTL Fixer — page styles (applied only while data-rtl-active is set).
  *
- * v2.3:
- * - RTL is scoped to chat/message content only. Menus, navigation, sidebars
- *   and headers are explicitly kept LTR, so the whole page no longer flips.
- * - Coverage is wider: generic markdown/chat selectors plus the containers
- *   used by the major AI chats, instead of only a few class names.
- * - The narrow centered chat column is widened so the conversation uses the
- *   full page width instead of just getting bigger inside a narrow column.
- * - Code keeps the site's own syntax highlighting (no forced dark colours).
- *   Code blocks get a neutral, theme-friendly box and a copy button.
+ * v2.4:
+ * - RTL now applies ONLY to the message text itself (paragraphs, list
+ *   items, headings inside the chat message), never to the container.
+ *   The page layout, sidebar, header, input box and buttons stay exactly
+ *   as the site made them. This fixes "everything became RTL".
+ * - The broad [class*="markdown"] / [class*="chat-message"] /
+ *   [class*="chat-bubble"] selectors are gone: they matched top-level
+ *   wrappers and flipped the whole page.
+ * - Code blocks are left completely alone (no background, no border
+ *   override). The site keeps its own code theme and syntax colours.
+ *   Only direction is forced LTR so code still reads left-to-right.
+ * - The narrow centered chat column is still widened (v2.3 behaviour).
  */
 
-/* ۰. Page chrome stays LTR: menus, nav, sidebars, headers. */
+/* ۰. Page chrome stays LTR: menus, nav, sidebars, headers, input areas. */
 html[data-rtl-active="true"] nav,
 html[data-rtl-active="true"] header,
 html[data-rtl-active="true"] aside,
+html[data-rtl-active="true"] footer,
+html[data-rtl-active="true"] form,
 html[data-rtl-active="true"] [role="navigation"],
 html[data-rtl-active="true"] [role="banner"],
 html[data-rtl-active="true"] [role="complementary"],
+html[data-rtl-active="true"] [role="search"],
 html[data-rtl-active="true"] [class*="sidebar"] {
     direction: ltr !important;
     text-align: left !important;
 }
 
-/* ۱. RTL + font on chat/message content only. */
-html[data-rtl-active="true"] .message-content,
-html[data-rtl-active="true"] .prose,
-html[data-rtl-active="true"] .markdown-body,
-html[data-rtl-active="true"] [class*="markdown"],
-html[data-rtl-active="true"] [class*="chat-message"],
-html[data-rtl-active="true"] [class*="chat-bubble"],
-html[data-rtl-active="true"] [class*="message-content"],
-html[data-rtl-active="true"] [data-message-author-role],
-html[data-rtl-active="true"] .font-claude-message,
-html[data-rtl-active="true"] .model-response-text,
-html[data-rtl-active="true"] [class*="response-content"] {
+/* ۱. RTL on the MESSAGE TEXT only — paragraphs, list items and headings
+ * inside the chat message. The message container itself is NOT flipped,
+ * so layout, code blocks, buttons and the input box stay put. */
+html[data-rtl-active="true"] [data-message-author-role] p,
+html[data-rtl-active="true"] [data-message-author-role] li,
+html[data-rtl-active="true"] [data-message-author-role] h1,
+html[data-rtl-active="true"] [data-message-author-role] h2,
+html[data-rtl-active="true"] [data-message-author-role] h3,
+html[data-rtl-active="true"] [data-message-author-role] h4,
+html[data-rtl-active="true"] [data-message-author-role] h5,
+html[data-rtl-active="true"] [data-message-author-role] h6,
+html[data-rtl-active="true"] [data-message-author-role] blockquote,
+html[data-rtl-active="true"] .font-claude-message p,
+html[data-rtl-active="true"] .font-claude-message li,
+html[data-rtl-active="true"] .font-claude-message h1,
+html[data-rtl-active="true"] .font-claude-message h2,
+html[data-rtl-active="true"] .font-claude-message h3,
+html[data-rtl-active="true"] .font-claude-message blockquote,
+html[data-rtl-active="true"] .model-response-text p,
+html[data-rtl-active="true"] .model-response-text li,
+html[data-rtl-active="true"] .model-response-text h1,
+html[data-rtl-active="true"] .model-response-text h2,
+html[data-rtl-active="true"] .model-response-text h3,
+html[data-rtl-active="true"] .model-response-text blockquote,
+html[data-rtl-active="true"] [class*="response-content"] p,
+html[data-rtl-active="true"] [class*="response-content"] li,
+html[data-rtl-active="true"] [class*="response-content"] h1,
+html[data-rtl-active="true"] [class*="response-content"] h2,
+html[data-rtl-active="true"] [class*="response-content"] h3,
+html[data-rtl-active="true"] [class*="response-content"] blockquote,
+html[data-rtl-active="true"] .message-content p,
+html[data-rtl-active="true"] .message-content li,
+html[data-rtl-active="true"] .message-content h1,
+html[data-rtl-active="true"] .message-content h2,
+html[data-rtl-active="true"] .message-content h3,
+html[data-rtl-active="true"] .message-content blockquote,
+html[data-rtl-active="true"] .prose p,
+html[data-rtl-active="true"] .prose li,
+html[data-rtl-active="true"] .prose h1,
+html[data-rtl-active="true"] .prose h2,
+html[data-rtl-active="true"] .prose h3,
+html[data-rtl-active="true"] .prose blockquote,
+html[data-rtl-active="true"] .markdown-body p,
+html[data-rtl-active="true"] .markdown-body li,
+html[data-rtl-active="true"] .markdown-body h1,
+html[data-rtl-active="true"] .markdown-body h2,
+html[data-rtl-active="true"] .markdown-body h3,
+html[data-rtl-active="true"] .markdown-body blockquote {
     direction: rtl !important;
     text-align: right !important;
     font-family: var(--rtl-font-family, 'Vazirmatn', 'Yekan Bakh', Tahoma, sans-serif) !important;
@@ -42,38 +84,15 @@ html[data-rtl-active="true"] [class*="response-content"] {
     font-size: var(--rtl-custom-font-size, 16px) !important;
 }
 
-/* ۲. Same for paragraphs inside those boxes. */
-html[data-rtl-active="true"] .message-content p,
-html[data-rtl-active="true"] .prose p,
-html[data-rtl-active="true"] .markdown-body p,
-html[data-rtl-active="true"] [class*="markdown"] p,
-html[data-rtl-active="true"] [class*="chat-message"] p,
-html[data-rtl-active="true"] [data-message-author-role] p {
-    direction: rtl !important;
-    text-align: right !important;
-    font-family: var(--rtl-font-family, 'Vazirmatn', 'Yekan Bakh', Tahoma, sans-serif) !important;
-    font-size: var(--rtl-custom-font-size, 16px) !important;
-}
-
-/* ۳. Widen the chat column: use the full page width. */
-html[data-rtl-active="true"] .message-content,
-html[data-rtl-active="true"] .prose,
-html[data-rtl-active="true"] .markdown-body,
-html[data-rtl-active="true"] [class*="markdown"],
-html[data-rtl-active="true"] [class*="chat-message"],
-html[data-rtl-active="true"] [class*="chat-bubble"],
-html[data-rtl-active="true"] [data-message-author-role] {
-    max-width: 100% !important;
-}
-
-/* The narrow centered column most AI chats use (Tailwind max-w-*). */
+/* ۲. Widen the chat column: use the full page width. */
 html[data-rtl-active="true"] main [class*="max-w-"],
 html[data-rtl-active="true"] article [class*="max-w-"] {
     max-width: min(1150px, 95%) !important;
 }
 
-/* ۴. Code stays LTR and monospace. Inline code gets a subtle box so it
- * reads as code, not body text. The site's own syntax colours are kept. */
+/* ۳. Code stays LTR and monospace, with the site's own colours untouched.
+ * No background or border is forced here: the site keeps its own code
+ * theme and syntax highlighting exactly as it was. */
 html[data-rtl-active="true"] code,
 html[data-rtl-active="true"] kbd,
 html[data-rtl-active="true"] tt {
@@ -83,39 +102,24 @@ html[data-rtl-active="true"] tt {
     font-size: var(--rtl-code-font-size, 14px) !important;
 }
 
-html[data-rtl-active="true"] :not(pre) > code {
-    background: rgba(128, 128, 128, 0.14) !important;
-    border: 1px solid rgba(128, 128, 128, 0.28) !important;
-    border-radius: 6px !important;
-    padding: 2px 6px !important;
-    margin: 0 3px !important;
-    display: inline-block !important;
-}
-
-/* ۵. Code blocks: a neutral box (works on light and dark pages) that can be
- * copied, with the site's syntax highlighting left intact. */
-html[data-rtl-active="true"] pre {
-    background: rgba(128, 128, 128, 0.10) !important;
-    border: 1px solid rgba(128, 128, 128, 0.28) !important;
+html[data-rtl-active="true"] pre,
+html[data-rtl-active="true"] pre code {
     direction: ltr !important;
     text-align: left !important;
-    padding: 16px !important;
-    border-radius: 10px !important;
+    unicode-bidi: isolate !important;
+}
+
+html[data-rtl-active="true"] pre {
     position: relative !important;
     overflow-x: auto !important;
 }
 
 html[data-rtl-active="true"] pre code {
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    display: block !important;
     font-family: 'Ubuntu Mono', Consolas, monospace !important;
     line-height: 1.6 !important;
 }
 
-/* ۶. The copy button injected by content.js (top-right of the code box). */
+/* ۴. The copy button injected by content.js (top-right of the code box). */
 html[data-rtl-active="true"] .smart-rtl-copy-btn {
     position: absolute !important;
     top: 8px !important;
@@ -136,7 +140,7 @@ html[data-rtl-active="true"] .smart-rtl-copy-btn:hover {
     background: rgba(30, 30, 30, 0.95) !important;
 }
 
-/* ۷. Keep code-area tool buttons readable. */
+/* ۵. Keep code-area tool buttons readable. */
 html[data-rtl-active="true"] [data-smart-rtl-code-tool] svg,
 html[data-rtl-active="true"] [data-smart-rtl-code-tool] i {
     width: 20px !important;
